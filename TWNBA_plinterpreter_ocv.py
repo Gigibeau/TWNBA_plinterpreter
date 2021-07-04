@@ -31,7 +31,7 @@ class PlImage:
         # cv.imshow('test', np.concatenate((self.img_norm, self.img_corrected_norm), axis=1))
         cv.imshow('original image', self.img_norm)
         cv.imshow('corrected image', self.img_corrected_norm)
-        cv.waitKey(0)
+        cv.waitKey(1000)
 
     def save_img(self):
         cv.imwrite(self.filename + '_final.tif', self.img_corrected)
@@ -76,6 +76,23 @@ class PlImage:
                        tuple(map(lambda x, y: x + y, masks.mask_dict[mask_option][key][0], (2, 60))),
                        font, font_scale, int(self.min_value), thickness, cv.LINE_AA)
 
+    def manual_analyse(self):
+        self.img_corrected_norm = cv.normalize(self.img_corrected, None, alpha=0, beta=1,
+                                               norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+
+        list_of_rois = cv.selectROIs('Manual Analyse', self.img_corrected_norm, showCrosshair=True)
+        return list_of_rois
+
+    def close_windows(self):
+        cv.destroyAllWindows()
+
+
+'''
+test = PlImage('test2.tif')
+test.tilt_correction()
+test.crop()
+test.manual_analyse()
+
 
 list_of_files = ['test1.tif', 'test2.tif', 'test3.tif', 'test4.tif']
 
@@ -86,3 +103,4 @@ for file in list_of_files:
     test.analyse('default')
     test.save_img()
     test.save_data()
+'''
