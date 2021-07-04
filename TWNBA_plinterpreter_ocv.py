@@ -9,19 +9,20 @@ class PlImage:
         self.filename = file_name.split('.')[0]
         self.img_original = cv.imread(file_name, flags=(cv.IMREAD_LOAD_GDAL | cv.IMREAD_ANYDEPTH))
         self.mean = cv.mean(self.img_original)[0]
-        self.threshold = self.mean * 0.95  # HAVE TO FIND A BETTER WAY
         self.min_value = self.img_original.min()
         self.img_corrected = self.img_original
+        self.data = pd.DataFrame()
+
+        self.threshold = None
+        self.upper_point = None
+        self.lower_point = None
+        self.left_point = None
+        self.top_point = None
         self.img_norm = None
         self.img_corrected_norm = None
-        self.upper_point = np.argmax(self.img_original[100, :] > self.threshold)
-        self.lower_point = np.argmax(self.img_original[900, :] > self.threshold)
-        self.left_point = np.argmax(self.img_original[512, :] > self.threshold)
-        self.top_point = np.argmax(self.img_original[:, 512] > self.threshold)
-        self.tilt = abs(self.upper_point - self.lower_point)
-        self.radian = np.arctan(self.tilt / 800)
-        self.degree = self.radian * (180 / np.pi)
-        self.data = pd.DataFrame()
+        self.tilt = None
+        self.radian = None
+        self.degree = None
 
     def show_img(self):
         self.img_norm = cv.normalize(self.img_original, None, alpha=0, beta=1,
@@ -39,7 +40,17 @@ class PlImage:
     def save_data(self):
         self.data.to_csv(self.filename + '.csv')
 
-    def tilt_correction(self):
+    def tilt_correction(self, threshold):
+        self.threshold = self.mean * threshold
+        self.upper_point = np.argmax(self.img_original[100, :] > self.threshold)
+        self.lower_point = np.argmax(self.img_original[900, :] > self.threshold)
+        self.left_point = np.argmax(self.img_original[512, :] > self.threshold)
+        self.top_point = np.argmax(self.img_original[:, 512] > self.threshold)
+
+        self.tilt = abs(self.upper_point - self.lower_point)
+        self.radian = np.arctan(self.tilt / 800)
+        self.degree = self.radian * (180 / np.pi)
+
         image_center = tuple(np.array(self.img_corrected.shape[1::-1]) / 2)
 
         if self.upper_point > self.lower_point:
@@ -52,7 +63,13 @@ class PlImage:
 
         self.img_corrected[self.img_corrected < self.min_value] = self.min_value
 
-    def crop(self):
+    def crop(self, threshold):
+        self.threshold = self.mean * threshold
+        self.upper_point = np.argmax(self.img_original[100, :] > self.threshold)
+        self.lower_point = np.argmax(self.img_original[900, :] > self.threshold)
+        self.left_point = np.argmax(self.img_original[512, :] > self.threshold)
+        self.top_point = np.argmax(self.img_original[:, 512] > self.threshold)
+
         self.img_corrected = self.img_corrected[self.top_point:, self.left_point:]
 
     def analyse(self, mask_option):

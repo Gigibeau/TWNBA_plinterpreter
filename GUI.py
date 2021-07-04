@@ -29,23 +29,30 @@ checkbutton_visual.grid(row=0, column=3)
 checkbutton_visual = Checkbutton(root, text='save images?', variable=var_img)
 checkbutton_visual.grid(row=0, column=4)
 
+label_threshold = Label(root, text='threshold:')
+label_threshold.grid(row=1, column=0)
+entry_threshold = Entry(root, width=5)
+entry_threshold.insert(END, 0.95)
+entry_threshold.grid(row=1, column=1)
+
 combo_mask = ttk.Combobox(root, values=list_of_masks)
 combo_mask.set('Which mask?')
-combo_mask.grid(row=1, column=1, columnspan=2)
+combo_mask.grid(row=2, column=1, columnspan=2)
 
 button_analyse = Button(root, text='Auto Analyse', command=lambda: auto_analyse(var_tilt.get(),
                                                                                 var_crop.get(),
                                                                                 var_visual.get(),
                                                                                 var_img.get(),
-                                                                                combo_mask.get()))
-button_analyse.grid(row=1, column=0)
+                                                                                combo_mask.get(),
+                                                                                float(entry_threshold.get())))
+button_analyse.grid(row=2, column=0)
 
 button_mask_builder = Button(root, text='Mask Builder', command=lambda: mask_builder())
-button_mask_builder.grid(row=1, column=3, columnspan=2)
+button_mask_builder.grid(row=2, column=3, columnspan=2)
 
 # Placement of the log
 text = Text(root, width=40, height=20)
-text.grid(row=2, column=0, columnspan=5)
+text.grid(row=3, column=0, columnspan=5)
 
 
 def open_files():
@@ -58,15 +65,15 @@ def open_files():
     text.see('end')
 
 
-def auto_analyse(tilt, crop, visual, img, mask_choice):
+def auto_analyse(tilt, crop, visual, img, mask_choice, threshold):
     global pl_image
     for file in list_of_files:
         pl_image = TWNBA_plinterpreter_ocv.PlImage(file)
         if tilt == 1:
-            pl_image.tilt_correction()
+            pl_image.tilt_correction(threshold)
 
         if crop == 1:
-            pl_image.crop()
+            pl_image.crop(threshold)
 
         if mask_choice == 'Which mask?':
             if visual == 1:
