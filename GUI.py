@@ -151,6 +151,7 @@ def mask_builder(tilt, crop, threshold):
                 pickle.dump(new_mask_dict, fp)
 
             update_mask_list()
+            TWNBA_plinterpreter_ocv.close_windows()
 
     except NameError:
         messagebox.showerror('Error', 'You forgot to open a file. Open a file to build a mask!')
