@@ -29,7 +29,7 @@ class PlImage:
                                      norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
         self.img_corrected_norm = cv.normalize(self.img_corrected, None, alpha=0, beta=1,
                                                norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
-        # cv.imshow('test', np.concatenate((self.img_norm, self.img_corrected_norm), axis=1))
+
         cv.imshow('original image', self.img_norm)
         cv.imshow('corrected image', self.img_corrected_norm)
         cv.waitKey(1000)
@@ -81,7 +81,7 @@ class PlImage:
             mask_dict = pickle.load(pickle_file)
 
         for key in mask_dict[mask_option]:
-            self.data.loc[self.filename, key] = cv.mean(
+            self.data.loc[self.filename.split('/')[-1], key] = cv.mean(
                 self.img_corrected[mask_dict[mask_option][key][0][1]:mask_dict[mask_option][key][1][1],
                                    mask_dict[mask_option][key][0][0]:mask_dict[mask_option][key][1][0]])[0]
 
@@ -92,7 +92,7 @@ class PlImage:
                        tuple(map(lambda x, y: x + y, mask_dict[mask_option][key][0], (2, 30))),
                        font, font_scale, int(self.min_value), thickness, cv.LINE_AA)
 
-            cv.putText(self.img_corrected, str(round(self.data.loc[self.filename, key], 2)),
+            cv.putText(self.img_corrected, str(round(self.data.loc[self.filename.split('/')[-1], key], 2)),
                        tuple(map(lambda x, y: x + y, mask_dict[mask_option][key][0], (2, 60))),
                        font, font_scale, int(self.min_value), thickness, cv.LINE_AA)
 
@@ -103,24 +103,6 @@ class PlImage:
         list_of_rois = cv.selectROIs('Manual Analyse', self.img_corrected_norm, showCrosshair=True)
         return list_of_rois
 
-    def close_windows(self):
-        cv.destroyAllWindows()
 
-
-'''
-test = PlImage('test2.tif')
-test.tilt_correction()
-test.crop()
-test.manual_analyse()
-
-
-list_of_files = ['test1.tif', 'test2.tif', 'test3.tif', 'test4.tif']
-
-for file in list_of_files:
-    test = PlImage(file)
-    test.tilt_correction()
-    test.crop()
-    test.analyse('default')
-    test.save_img()
-    test.save_data()
-'''
+def close_windows():
+    cv.destroyAllWindows()
