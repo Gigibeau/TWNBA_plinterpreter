@@ -1,8 +1,8 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
+import pickle
 import TWNBA_plinterpreter_ocv
-import masks
 
 root = Tk()
 
@@ -13,8 +13,11 @@ var_tilt = IntVar(value=1)
 var_crop = IntVar(value=1)
 var_visual = IntVar(value=1)
 var_img = IntVar(value=1)
+
+with open('masks.pickle', 'rb') as pickle_file:
+    mask_dict_conv = pickle.load(pickle_file)
 list_of_masks = []
-for mask in masks.mask_dict:
+for mask in mask_dict_conv:
     list_of_masks.append(mask)
 
 button_open = Button(root, text="open", command=lambda: open_files())
@@ -96,9 +99,19 @@ def auto_analyse(tilt, crop, visual, img, mask_choice, threshold):
 
 
 def mask_builder():
-    pl_image_to_mask = TWNBA_plinterpreter_ocv.PlImage(list_of_files[0])
-    new_mask = pl_image_to_mask.manual_analyse()
-    print(new_mask)
+    with open('masks.pickle', 'rb') as pickle_mask_file:
+        new_mask_dict = pickle.load(pickle_mask_file)
+
+    new_mask_dict['test_mask'] = {
+        'test_1': [(330, 150), (430, 250)],
+        'test_2': [(190, 290), (290, 390)]
+    }
+    # pl_image_to_mask = TWNBA_plinterpreter_ocv.PlImage(list_of_files[0])
+    # new_mask = pl_image_to_mask.manual_analyse()
+    # print(new_mask)
+
+    with open('masks.pickle', 'wb') as fp:
+        pickle.dump(new_mask_dict, fp)
 
 
 root.mainloop()

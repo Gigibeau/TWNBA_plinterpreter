@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import cv2 as cv
-import masks
+import pickle
 
 
 class PlImage:
@@ -77,20 +77,23 @@ class PlImage:
         thickness = 2
         font = cv.FONT_HERSHEY_SIMPLEX
 
-        for key in masks.mask_dict[mask_option]:
-            self.data.loc[self.filename, key] = cv.mean(
-                self.img_corrected[masks.mask_dict[mask_option][key][0][1]:masks.mask_dict[mask_option][key][1][1],
-                                   masks.mask_dict[mask_option][key][0][0]:masks.mask_dict[mask_option][key][1][0]])[0]
+        with open('masks.pickle', 'rb') as pickle_file:
+            mask_dict = pickle.load(pickle_file)
 
-            cv.rectangle(self.img_corrected, masks.mask_dict[mask_option][key][0],
-                         masks.mask_dict[mask_option][key][1], int(self.min_value), 2)
+        for key in mask_dict[mask_option]:
+            self.data.loc[self.filename, key] = cv.mean(
+                self.img_corrected[mask_dict[mask_option][key][0][1]:mask_dict[mask_option][key][1][1],
+                                   mask_dict[mask_option][key][0][0]:mask_dict[mask_option][key][1][0]])[0]
+
+            cv.rectangle(self.img_corrected, mask_dict[mask_option][key][0],
+                         mask_dict[mask_option][key][1], int(self.min_value), 2)
 
             cv.putText(self.img_corrected, key,
-                       tuple(map(lambda x, y: x + y, masks.mask_dict[mask_option][key][0], (2, 30))),
+                       tuple(map(lambda x, y: x + y, mask_dict[mask_option][key][0], (2, 30))),
                        font, font_scale, int(self.min_value), thickness, cv.LINE_AA)
 
             cv.putText(self.img_corrected, str(round(self.data.loc[self.filename, key], 2)),
-                       tuple(map(lambda x, y: x + y, masks.mask_dict[mask_option][key][0], (2, 60))),
+                       tuple(map(lambda x, y: x + y, mask_dict[mask_option][key][0], (2, 60))),
                        font, font_scale, int(self.min_value), thickness, cv.LINE_AA)
 
     def manual_analyse(self):
