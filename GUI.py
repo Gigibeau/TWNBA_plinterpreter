@@ -4,10 +4,8 @@ from tkinter import filedialog
 from tkinter import simpledialog
 from tkinter import messagebox
 import pickle
-
 import pandas as pd
-
-import TWNBA_plinterpreter_ocv
+import TWNBA_plinterpreter
 
 root = Tk()
 
@@ -68,6 +66,11 @@ button_mask_builder = Button(root, text='Mask Builder', command=lambda: mask_bui
                                                                                      float(entry_threshold.get())))
 button_mask_builder.grid(row=2, column=3, columnspan=2)
 
+button_rapid_mask = Button(root, text='Rapid Mask', command=lambda: rapid_mask(var_tilt.get(),
+                                                                               var_crop.get(),
+                                                                               float(entry_threshold.get())))
+button_rapid_mask.grid(row=1, column=3, columnspan=2)
+
 # Placement of the log
 text = Text(root, width=40, height=20)
 text.grid(row=3, column=0, columnspan=5)
@@ -91,7 +94,7 @@ def auto_analyse(tilt, crop, visual, img, mask_choice, threshold):
 
     try:
         for file in list_of_files:
-            pl_image = TWNBA_plinterpreter_ocv.PlImage(file)
+            pl_image = TWNBA_plinterpreter.PlImage(file)
             if tilt == 1:
                 pl_image.tilt_correction(threshold)
 
@@ -115,7 +118,7 @@ def auto_analyse(tilt, crop, visual, img, mask_choice, threshold):
                 pl_image.save_img()
 
             pl_image.save_data()
-        TWNBA_plinterpreter_ocv.close_windows()
+        TWNBA_plinterpreter.close_windows()
 
     except NameError:
         messagebox.showerror('Error', 'You forgot to open a file. Open a file(s) first!')
@@ -126,11 +129,12 @@ def mask_builder(tilt, crop, threshold):
         new_mask_dict = pickle.load(pickle_mask_file)
 
     input_title = simpledialog.askstring('Input', 'What should be the title of the mask', parent=root)
-    input_fields_str = simpledialog.askstring('Input', 'What are the names of the fields (, sep)', parent=root)
-    input_fields_list = input_fields_str.split(', ')
+    input_fields_str = simpledialog.askstring('Input', 'What are the names of the fields (, sep (like .csv))',
+                                              parent=root)
+    input_fields_list = input_fields_str.split(',')
     new_mask_dict[input_title] = {field: [] for field in input_fields_list}
     try:
-        pl_image_to_mask = TWNBA_plinterpreter_ocv.PlImage(list_of_files[0])
+        pl_image_to_mask = TWNBA_plinterpreter.PlImage(list_of_files[0])
 
         if tilt == 1:
             pl_image_to_mask.tilt_correction(threshold)
@@ -151,7 +155,40 @@ def mask_builder(tilt, crop, threshold):
                 pickle.dump(new_mask_dict, fp)
 
             update_mask_list()
-            TWNBA_plinterpreter_ocv.close_windows()
+            TWNBA_plinterpreter.close_windows()
+
+    except NameError:
+        messagebox.showerror('Error', 'You forgot to open a file. Open a file to build a mask!')
+
+
+def rapid_mask(tilt, crop, threshold):
+    with open('masks.pickle', 'rb') as pickle_mask_file:
+        new_mask_dict = pickle.load(pickle_mask_file)
+
+    input_title = simpledialog.askstring('Input', 'What should be the title of the mask', parent=root)
+
+    try:
+        pl_image_to_mask = TWNBA_plinterpreter.PlImage(list_of_files[0])
+
+        if tilt == 1:
+            pl_image_to_mask.tilt_correction(threshold)
+
+        if crop == 1:
+            pl_image_to_mask.crop(threshold)
+
+        new_mask = pl_image_to_mask.rapid_analyse()
+        num_of_points = new_mask.shape[0]
+        new_mask_dict[input_title] = {str(field): [] for field in range(num_of_points)}
+
+        for field in range(num_of_points):
+            new_mask_dict[input_title][str(field)] = [(new_mask[field][0], new_mask[field][1]),
+                                                      (new_mask[field][0] + new_mask[field][2],
+                                                       new_mask[field][1] + new_mask[field][3])]
+
+        with open('masks.pickle', 'wb') as fp:
+            pickle.dump(new_mask_dict, fp)
+
+        update_mask_list()
 
     except NameError:
         messagebox.showerror('Error', 'You forgot to open a file. Open a file to build a mask!')
