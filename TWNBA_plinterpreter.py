@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import cv2 as cv
 import pickle
+from scipy import stats
 
 pos_list = []
 
@@ -32,8 +33,13 @@ class PlImage:
         self.img_corrected_norm = cv.normalize(self.img_corrected, None, alpha=0, beta=1,
                                                norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
 
-        cv.imshow('original image', self.img_norm)
+
+
         cv.imshow('corrected image', self.img_corrected_norm)
+        cv.moveWindow('corrected image', 0, 0)
+        win_position = cv.getWindowImageRect('corrected image')
+        cv.imshow('original image', self.img_norm)
+        cv.moveWindow('original image', win_position[2], 0)
         cv.waitKey(1000)
 
     def save_img(self):
@@ -44,18 +50,22 @@ class PlImage:
 
     def tilt_correction(self, threshold):
         self.threshold = self.mean * threshold
-        self.upper_point = np.argmax(self.img_original[100, :] > self.threshold)
-        self.lower_point = np.argmax(self.img_original[900, :] > self.threshold)
-        self.left_point = np.argmax(self.img_original[512, :] > self.threshold)
-        self.top_point = np.argmax(self.img_original[:, 512] > self.threshold)
 
-        self.tilt = abs(self.upper_point - self.lower_point)
+        x_values = [100, 200, 300, 400, 500, 600, 700, 800, 900]
+        y_values = []
+
+        for x_value in x_values:
+            y_values.append(np.argmax(self.img_original[x_value, :] > self.threshold))
+
+        slope, _, __, ___, ____ = stats.linregress(x_values, y_values)
+
+        self.tilt = abs(slope)
         self.radian = np.arctan(self.tilt / 800)
         self.degree = self.radian * (180 / np.pi)
 
         image_center = tuple(np.array(self.img_corrected.shape[1::-1]) / 2)
 
-        if self.upper_point > self.lower_point:
+        if slope <= 0:
             rot_mat = cv.getRotationMatrix2D(image_center, self.degree, 1.0)
         else:
             rot_mat = cv.getRotationMatrix2D(image_center, - self.degree, 1.0)
@@ -65,12 +75,23 @@ class PlImage:
 
         self.img_corrected[self.img_corrected < self.min_value] = self.min_value
 
+
     def crop(self, threshold):
         self.threshold = self.mean * threshold
-        self.upper_point = np.argmax(self.img_original[100, :] > self.threshold)
-        self.lower_point = np.argmax(self.img_original[900, :] > self.threshold)
-        self.left_point = np.argmax(self.img_original[512, :] > self.threshold)
-        self.top_point = np.argmax(self.img_original[:, 512] > self.threshold)
+
+        x_values = [100, 200, 300, 400, 500, 600, 700, 800, 900]
+        y_values_left = []
+        y_values_top = []
+
+        for x_value in x_values:
+            y_values_left.append(np.argmax(self.img_original[x_value, :] > self.threshold))
+
+        self.left_point = int(np.mean(y_values_left))
+
+        for x_value in x_values:
+            y_values_top.append(np.argmax(self.img_original[:, x_value] > self.threshold))
+
+        self.top_point = int(np.mean(y_values_top))
 
         self.img_corrected = self.img_corrected[self.top_point:, self.left_point:]
 
@@ -133,7 +154,7 @@ class PlImage:
         return array_of_rois.astype(int)
 
 
-def on_click(event, x, y, flags, param):
+def on_click(event, x, y, _, __):
     global pos_list
     if event == cv.EVENT_LBUTTONDOWN:
         pos_list.append((x, y))
