@@ -132,7 +132,12 @@ class PlImage:
         self.img_corrected_norm = cv.normalize(self.img_corrected, None, alpha=0, beta=1,
                                                norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
 
+        
+        controls_rapid = cv.imread('controls_rapid_mask.jpg')
+        cv.imshow('Controls', controls_rapid)
+        cv.moveWindow('Controls', 0, 0)
         roi = cv.selectROI('ROI Selection', self.img_corrected_norm, showCrosshair=True)
+        
         cv.destroyWindow('ROI Selection')
         cv.imshow('Rapid Analyse', self.img_corrected_norm)
         cv.setMouseCallback('Rapid Analyse', on_click)

@@ -6,6 +6,7 @@ from tkinter import messagebox
 import pickle
 import pandas as pd
 import TWNBA_plinterpreter
+import cv2 as cv
 
 root = Tk()
 
@@ -129,6 +130,9 @@ def mask_builder(tilt, crop, threshold):
         new_mask_dict = pickle.load(pickle_mask_file)
 
     input_title = simpledialog.askstring('Input', 'What should be the title of the mask', parent=root)
+    controls_rapid = cv.imread('controls_mask_builder.jpg')
+    cv.imshow('Controls', controls_rapid)
+    cv.moveWindow('Controls', 0, 0)
     input_fields_str = simpledialog.askstring('Input', 'What are the names of the fields (, sep (like .csv))',
                                               parent=root)
     input_fields_list = input_fields_str.split(',')
@@ -197,10 +201,11 @@ def rapid_mask(tilt, crop, threshold):
 def merge_csv():
     df_csvs = pd.DataFrame()
     list_of_csvs = filedialog.askopenfilenames()
+    output_name = filedialog.asksaveasfile(mode='w', defaultextension=".csv")
     for csv in list_of_csvs:
         df_to_add = pd.read_csv(csv)
         df_csvs = pd.concat([df_csvs, df_to_add])
-    df_csvs.to_csv('summary.csv')
+    df_csvs.to_csv(output_name, index=False)
 
 
 root.mainloop()
